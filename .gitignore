@@ -5,3 +5,4 @@ __pycache__/
 runs/
 .DS_Store
 *.onnx
+*.csv
