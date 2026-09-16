@@ -1,5 +1,4 @@
-
-**Terça, 30 ago** — O que fiz:
+**Terça, 30 ago** 
 
 - Setup completo do ambiente (Homebrew, Git, Docker, Python, VS Code, Tailscale ligado à rede bridgelk.com)
 - Estrutura inicial do repositório criada
@@ -8,7 +7,7 @@
 - Testei o yolov8n sobre um vídeo próprio (model/videos/teste.mp4, 400 frames). Abriu, correu, fechou sozinho no fim. Latência por frame ~19-25ms (CPU, Mac). Detetou as pessoas identificando "person", mas além disso erou tudo (disse que uma tenda era "umbrella").
 - Exportei o yolov8n.pt para ONNX usando model.export(format="onnx"). Sucesso em 6.4s, gerou yolov8n.onnx (12.3MB, maior que o .pt original de 6.2MB porque inclui a estrutura do grafo). Próximo passo: correr o modelo .onnx diretamente com onnxruntime (sem passar pelo ultralytics).
 
-**Quarta, 31 ago** — O que fiz:
+**Quarta, 31 ago**
 
 - Implementei o pipeline de inferência ONNX "à mão" (sem ultralytics): pré-processamento (letterbox + normalização + reordenação de eixos), inferência com onnxruntime (CPUExecutionProvider), e pós-processamento (decode das 8400 previsões + NMS via cv2.dnn.NMSBoxes).
 - Testado no primeiro frame de model/videos/teste.mp4: encontrou 2 deteções ("umbrella" 0.78 e 0.64).
@@ -17,3 +16,10 @@
 - Medi latência/débito do pipeline ONNX manual sobre os 400 frames do vídeo de teste: média 20.22ms, min 18.66ms, max 37.81ms, ~49.5 FPS (CPU, Mac). Consistente com os números da ultralytics de ontem.
 - Defini a estrutura da mensagem de deteção (frame_id, timestamp, lista de deteções) e serializei em JSON. Payload de teste com 2 deteções: 253 bytes. Este número fica como baseline para comparar com Protobuf mais tarde.
 - Corrigido o "No route to host" fixando IP_MULTICAST_IF="192.168.1.97" (rede Wi-Fi local) no publisher, para não depender da escolha automática de interface (Tailscale competia como candidata). Publisher e dois consumers a funcionar de forma reprodutível à primeira tentativa.
+
+**Quarta, 16 set** 
+
+- Criei o repositório público de portefólio (github.com/djfgomes/lab-id), separado do bridgelk/lab-id privado, com histórico limpo e .gitignore ajustado (binários, vídeos e CSVs de teste excluídos, resultados finais mantidos em results/).
+- Comparei FP32 vs quantização dinâmica INT8 do yolov8n.onnx (pré-processamento do grafo antes de quantizar, conforme recomendado pela própria ferramenta), sobre os mesmos 400 frames do vídeo de teste.
+- Resultado contra-intuitivo: o INT8 ficou mais lento (25.6ms vs 21.1ms de latência média, -18% no débito, de 47.5 para 39.1 FPS) e ligeiramente menos confiante (0.592 vs 0.601 de confiança média, menos deteções por frame).
+Explicação: a quantização dinâmica do onnxruntime acelera sobretudo operações MatMul/Gemm, comuns em modelos densos, mas o YOLO é dominado por Conv2D, para as quais o CPU execution provider não tem kernels INT8 bem otimizados — o overhead de quantizar/desquantizar em tempo real acaba por custar mais do que poupa.
