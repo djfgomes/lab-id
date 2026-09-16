@@ -6,3 +6,6 @@ runs/
 .DS_Store
 *.onnx
 *.csv
+!results/*.csv
+*.mp4
+*.avi

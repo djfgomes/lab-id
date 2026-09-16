@@ -1,4 +1,3 @@
-## Semana 1 (30 ago – 1 set)
 
 **Terça, 30 ago** — O que fiz:
 
